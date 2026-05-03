@@ -1,6 +1,6 @@
 // pages/public/LandingPage.tsx
 import { Link } from 'react-router-dom';
-import { Shield, Zap, Users, TrendingUp, Lock, Globe, ChevronRight, Check } from 'lucide-react';
+import { Shield, Zap, Users, TrendingUp, Lock, Globe, ChevronRight } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 

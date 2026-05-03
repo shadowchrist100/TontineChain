@@ -2,7 +2,7 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, List, CreditCard, Clock, User,
-  Bell, LogOut, Shield, Settings, ChevronDown, MessageSquare,
+  Bell, LogOut, Shield, MessageSquare,
 } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
 import { useNotifStore } from '../stores/notifStore';
@@ -27,11 +27,6 @@ const orgaNav: NavItem[] = [
   { to: '/profil',               label: 'Mon Profil',         icon: <User size={18} /> },
 ];
 
-const activeStyle: React.CSSProperties = {
-  background: 'var(--color-primary-fixed)',
-  color: 'var(--color-primary)',
-  fontWeight: 700,
-};
 
 export const MemberLayout = () => {
   const user     = useAuthStore((s) => s.user);

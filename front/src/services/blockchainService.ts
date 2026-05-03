@@ -20,7 +20,7 @@ export const blockchainService = {
   },
 
   // Simuler le déploiement d'un smart contract
-  async deployTontineContract(params: {
+  async deployTontineContract(_params: {
     nom: string;
     montantCotisation: number;
     nombreMembres: number;

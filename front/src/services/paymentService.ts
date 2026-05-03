@@ -53,7 +53,7 @@ export const paymentService = {
   },
 
   // Confirmation webhook (simulée)
-  async checkPaymentStatus(reference: string): Promise<'pending' | 'confirmed' | 'failed'> {
+  async checkPaymentStatus(_reference: string): Promise<'pending' | 'confirmed' | 'failed'> {
     await mockDelay(800);
     return 'confirmed';
   },

@@ -5,6 +5,9 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Public+Sans:wght@400;500;600;700&display=swap');
 
+@import url('./components.css');
+@import url('./pages.css');
+
 /* --- Tokens de couleurs --- */
 :root {
   /* Primary — Deep Blue / Institutional */

@@ -61,7 +61,7 @@ export const usePayerCotisation = () => {
       MOCK_TRANSACTIONS.push(tx);
       return tx;
     },
-    onSuccess: (_, payload) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['tontines'] });
       toast.success('Paiement initié. En attente de confirmation de l\'opérateur.');

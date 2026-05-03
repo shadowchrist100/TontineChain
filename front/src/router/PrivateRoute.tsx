@@ -1,13 +1,13 @@
 // router/PrivateRoute.tsx
 // Guard par rôle — conforme à ai-context.md section 5 & 8
 
+import type { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
 import type { Role } from '../types/user.types';
-import { PageLoader } from '../components/ui/Spinner';
 
 interface PrivateRouteProps {
-  children: React.ReactNode;
+  children: ReactNode;
   allowedRoles?: Role[];
 }
 

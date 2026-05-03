@@ -15,3 +15,6 @@ export const Toast = () => (
     }}
   />
 );
+
+// Named alias so App.tsx can do: import { Toaster } from './components/ui/Toast'
+export { Toast as Toaster };
