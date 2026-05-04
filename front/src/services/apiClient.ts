@@ -1,40 +1,96 @@
-// services/apiClient.ts
-// Instance Axios + intercepteurs JWT
-// Pour l'instant, renvoie les mock data
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios'
+import { useAuthStore } from '@/stores/authStore'
 
-import axios from 'axios';
-
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api';
-
+// ─── Instance principale ───────────────────────────────────────────
 export const apiClient = axios.create({
-  baseURL: BASE_URL,
-  timeout: 10000,
-  headers: { 'Content-Type': 'application/json' },
-});
+  // En dev : Vite proxy intercepte /api → localhost:3000
+  // En prod : pointe directement vers le back Render
+  baseURL: import.meta.env.PROD
+    ? `${import.meta.env.VITE_API_URL}/api`
+    : '/api',
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  withCredentials: true, // nécessaire pour le cookie HttpOnly refresh token
+})
 
-// Intercepteur requête — ajoute le token JWT
-apiClient.interceptors.request.use((config) => {
-  // Le token est géré par authStore (en mémoire, jamais localStorage)
-  // L'authStore injecte le token via ce mécanisme
-  const token = (window as any).__tontinechain_token__;
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// ─── Intercepteur requête : injection du JWT ──────────────────────
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const token = useAuthStore.getState().token
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+  },
+  (error) => Promise.reject(error)
+)
 
-// Intercepteur réponse — gestion des erreurs globales
+// ─── Intercepteur réponse : refresh silencieux sur 401 ────────────
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value: unknown) => void
+  reject: (reason?: unknown) => void
+}> = []
+
+const processQueue = (error: AxiosError | null, token: string | null = null) => {
+  failedQueue.forEach(({ resolve, reject }) => {
+    if (error) reject(error)
+    else resolve(token)
+  })
+  failedQueue = []
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    if (error.response?.status === 401) {
-      // Token expiré — déconnecter l'utilisateur
-      window.dispatchEvent(new CustomEvent('auth:logout'));
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean
     }
-    return Promise.reject(error);
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // File d'attente pendant le refresh
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then((token) => {
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          return apiClient(originalRequest)
+        })
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      try {
+        // Le cookie HttpOnly refresh token est envoyé automatiquement
+        const { data } = await axios.post(
+          `${import.meta.env.PROD ? import.meta.env.VITE_API_URL : ''}/api/auth/refresh`,
+          {},
+          { withCredentials: true }
+        )
+        const newToken: string = data.accessToken
+        useAuthStore.getState().setToken(newToken)
+        processQueue(null, newToken)
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
+        return apiClient(originalRequest)
+      } catch (refreshError) {
+        processQueue(refreshError as AxiosError, null)
+        useAuthStore.getState().logout()
+        window.location.href = '/login'
+        return Promise.reject(refreshError)
+      } finally {
+        isRefreshing = false
+      }
+    }
+
+    return Promise.reject(error)
   }
-);
+)
 
 // Utilitaire pour simuler un délai réseau dans les mocks
 export const mockDelay = (ms = 400) =>
   new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export default apiClient
